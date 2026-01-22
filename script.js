@@ -795,7 +795,17 @@ function showNextStrategy() {
 
     // Cycle through strategy texts continuously
     const textToShow = getStrategyTextAtIndex(currentStrategyIndex);
-    strategyText.textContent = textToShow;
+    const percentMatch = textToShow.match(/\+\s*\d+%/);
+    if (percentMatch) {
+        const percentText = percentMatch[0];
+        const htmlText = textToShow.replace(
+            percentText,
+            `<span class="percent-boost">${percentText}</span>`
+        );
+        strategyText.innerHTML = htmlText;
+    } else {
+        strategyText.textContent = textToShow;
+    }
     const isPercentBoost = isPercentStrategyText(textToShow);
     const isScanning = isScanningStrategyText(textToShow);
     strategyText.style.color = getStrategyTextColor(textToShow);
@@ -1032,7 +1042,17 @@ function animate() {
             // Keep the last strategy text visible permanently above the button
             const strategyText = document.getElementById('strategy-text');
             if (lastStrategyText) {
-                strategyText.textContent = lastStrategyText;
+                const percentMatch = lastStrategyText.match(/\+\s*\d+%/);
+                if (percentMatch) {
+                    const percentText = percentMatch[0];
+                    const htmlText = lastStrategyText.replace(
+                        percentText,
+                        `<span class="percent-boost">${percentText}</span>`
+                    );
+                    strategyText.innerHTML = htmlText;
+                } else {
+                    strategyText.textContent = lastStrategyText;
+                }
                 strategyText.classList.add('show');
                 strategyText.style.color = getStrategyTextColor(lastStrategyText);
             }
