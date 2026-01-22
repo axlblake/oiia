@@ -51,6 +51,27 @@ body {
     z-index: 10;
 }
 
+#press-text {
+    position: absolute;
+    top: 65%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    color: white;
+    font-size: 1.6rem;
+    font-weight: bold;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+    text-align: center;
+    opacity: 1;
+    transition: all 0.4s ease;
+    z-index: 9;
+    pointer-events: none;
+}
+
+#press-text.hidden {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+}
+
 #strategy-text.show {
     opacity: 1;
     transform: translateY(0);
@@ -87,6 +108,11 @@ body {
     #strategy-text {
         font-size: 2rem;
         bottom: 120px;
+    }
+
+    #press-text {
+        font-size: 1.2rem;
+        top: 68%;
     }
 
     #start-earn-btn {

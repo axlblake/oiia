@@ -2,7 +2,78 @@
 let audioContext = null;
 let soundInterval = null;
 let isPlaying = false;
+const AUDIO_ELEMENT_ID = 'iaai-audio';
+/**
+ * @type {{
+ *   offset: number,
+ *   oscType: OscillatorType,
+ *   filterFrequency: number,
+ *   filterQ: number,
+ *   freqSteps: { at: number, value: number, ramp: 'linear' | 'exponential' }[],
+ *   gainSteps: { at: number, value: number, ramp: 'linear' | 'exponential' }[],
+ *   duration: number
+ * }[]}
+ */
+const IAAI_SEGMENTS = [
+    {
+        offset: 0,
+        oscType: 'sawtooth',
+        filterFrequency: 2800,
+        filterQ: 8,
+        freqSteps: [
+            { at: 0, value: 900, ramp: 'linear' },
+            { at: 0.1, value: 1000, ramp: 'exponential' }
+        ],
+        gainSteps: [
+            { at: 0, value: 0, ramp: 'linear' },
+            { at: 0.02, value: 0.4, ramp: 'linear' },
+            { at: 0.15, value: 0.3, ramp: 'exponential' },
+            { at: 0.2, value: 0.01, ramp: 'exponential' }
+        ],
+        duration: 0.2
+    },
+    {
+        offset: 0.15,
+        oscType: 'sawtooth',
+        filterFrequency: 1500,
+        filterQ: 6,
+        freqSteps: [
+            { at: 0, value: 550, ramp: 'linear' },
+            { at: 0.15, value: 600, ramp: 'exponential' },
+            { at: 0.25, value: 500, ramp: 'exponential' }
+        ],
+        gainSteps: [
+            { at: 0, value: 0, ramp: 'linear' },
+            { at: 0.03, value: 0.5, ramp: 'linear' },
+            { at: 0.1, value: 0.5, ramp: 'linear' },
+            { at: 0.25, value: 0.3, ramp: 'exponential' },
+            { at: 0.3, value: 0.01, ramp: 'exponential' }
+        ],
+        duration: 0.3
+    },
+    {
+        offset: 0.4,
+        oscType: 'sawtooth',
+        filterFrequency: 2800,
+        filterQ: 10,
+        freqSteps: [
+            { at: 0, value: 850, ramp: 'linear' },
+            { at: 0.1, value: 950, ramp: 'exponential' },
+            { at: 0.15, value: 900, ramp: 'exponential' }
+        ],
+        gainSteps: [
+            { at: 0, value: 0, ramp: 'linear' },
+            { at: 0.02, value: 0.4, ramp: 'linear' },
+            { at: 0.08, value: 0.4, ramp: 'linear' },
+            { at: 0.15, value: 0.01, ramp: 'exponential' }
+        ],
+        duration: 0.15
+    }
+];
 
+/**
+ * Initialize the audio context for synth playback.
+ */
 function initAudioContext() {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -12,119 +83,149 @@ function initAudioContext() {
     }
 }
 
-function playIAAISound() {
-    initAudioContext();
-    
-    if (isPlaying) return; // Already playing
-    isPlaying = true;
-
-    // Play IAAI sound continuously while holding
-    const playSingleIAAI = () => {
-        if (!isPlaying || !audioContext) return;
-
-        // IAAI meme sound pattern: I-AA-I (high-low-high)
-        // This matches the actual meme cat vocalization
-        const totalDuration = 0.65; // Total duration of one IAAI sound
-        let currentTime = audioContext.currentTime;
-
-        // "I" - High pitched start (around 1000-1100 Hz)
-        const osc1 = audioContext.createOscillator();
-        const gain1 = audioContext.createGain();
-        const filter1 = audioContext.createBiquadFilter();
-        
-        filter1.type = 'bandpass';
-        filter1.frequency.setValueAtTime(2800, currentTime);
-        filter1.Q.setValueAtTime(8, currentTime);
-        
-        osc1.type = 'sawtooth';
-        osc1.frequency.setValueAtTime(1047, currentTime); // C6
-        osc1.frequency.exponentialRampToValueAtTime(1175, currentTime + 0.1); // D6
-        
-        gain1.gain.setValueAtTime(0, currentTime);
-        gain1.gain.linearRampToValueAtTime(0.5, currentTime + 0.02);
-        gain1.gain.exponentialRampToValueAtTime(0.3, currentTime + 0.15);
-        gain1.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.2);
-        
-        osc1.connect(filter1);
-        filter1.connect(gain1);
-        gain1.connect(audioContext.destination);
-        
-        osc1.start(currentTime);
-        osc1.stop(currentTime + 0.2);
-        currentTime += 0.2;
-
-        // "AA" - Lower, fuller sound (around 600-700 Hz)
-        const osc2 = audioContext.createOscillator();
-        const gain2 = audioContext.createGain();
-        const filter2 = audioContext.createBiquadFilter();
-        
-        filter2.type = 'bandpass';
-        filter2.frequency.setValueAtTime(1800, currentTime);
-        filter2.Q.setValueAtTime(6, currentTime);
-        
-        osc2.type = 'triangle';
-        osc2.frequency.setValueAtTime(659, currentTime); // E5
-        osc2.frequency.exponentialRampToValueAtTime(698, currentTime + 0.15); // F5
-        osc2.frequency.exponentialRampToValueAtTime(622, currentTime + 0.25); // D#5
-        
-        gain2.gain.setValueAtTime(0, currentTime);
-        gain2.gain.linearRampToValueAtTime(0.6, currentTime + 0.03);
-        gain2.gain.setValueAtTime(0.6, currentTime + 0.1);
-        gain2.gain.exponentialRampToValueAtTime(0.4, currentTime + 0.25);
-        gain2.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.3);
-        
-        osc2.connect(filter2);
-        filter2.connect(gain2);
-        gain2.connect(audioContext.destination);
-        
-        osc2.start(currentTime);
-        osc2.stop(currentTime + 0.3);
-        currentTime += 0.3;
-
-        // "I" - High pitched end (around 1000-1100 Hz)
-        const osc3 = audioContext.createOscillator();
-        const gain3 = audioContext.createGain();
-        const filter3 = audioContext.createBiquadFilter();
-        
-        filter3.type = 'bandpass';
-        filter3.frequency.setValueAtTime(3000, currentTime);
-        filter3.Q.setValueAtTime(10, currentTime);
-        
-        osc3.type = 'sawtooth';
-        osc3.frequency.setValueAtTime(988, currentTime); // B5
-        osc3.frequency.exponentialRampToValueAtTime(1109, currentTime + 0.1); // C#6
-        osc3.frequency.exponentialRampToValueAtTime(1047, currentTime + 0.15); // C6
-        
-        gain3.gain.setValueAtTime(0, currentTime);
-        gain3.gain.linearRampToValueAtTime(0.55, currentTime + 0.02);
-        gain3.gain.setValueAtTime(0.55, currentTime + 0.08);
-        gain3.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.15);
-        
-        osc3.connect(filter3);
-        filter3.connect(gain3);
-        gain3.connect(audioContext.destination);
-        
-        osc3.start(currentTime);
-        osc3.stop(currentTime + 0.15);
-    };
-
-    // Play immediately
-    playSingleIAAI();
-
-    // Then loop continuously every ~0.7 seconds (slight overlap for continuous feel)
-    soundInterval = setInterval(() => {
-        if (isPlaying && audioContext) {
-            playSingleIAAI();
-        }
-    }, 700);
+/**
+ * @returns {HTMLAudioElement | null}
+ */
+function getIAAIAudioElement() {
+    const element = document.getElementById(AUDIO_ELEMENT_ID);
+    return element instanceof HTMLAudioElement ? element : null;
 }
 
-function stopIAAISound() {
+/**
+ * @param {HTMLAudioElement} audioElement
+ */
+function playMediaIAAISound(audioElement) {
+    if (isPlaying) return;
+    isPlaying = true;
+    audioElement.play();
+}
+
+/**
+ * @param {HTMLAudioElement} audioElement
+ */
+function stopMediaIAAISound(audioElement) {
+    isPlaying = false;
+    audioElement.pause();
+}
+
+/**
+ * @param {AudioContext} context
+ * @param {number} startTime
+ * @param {OscillatorType} oscType
+ * @param {number} filterFrequency
+ * @param {number} filterQ
+ * @param {{ at: number, value: number, ramp: 'linear' | 'exponential' }[]} freqSteps
+ * @param {{ at: number, value: number, ramp: 'linear' | 'exponential' }[]} gainSteps
+ * @param {number} duration
+ */
+function scheduleIAAISegment(
+    context,
+    startTime,
+    oscType,
+    filterFrequency,
+    filterQ,
+    freqSteps,
+    gainSteps,
+    duration
+) {
+    const osc = context.createOscillator();
+    const gain = context.createGain();
+    const filter = context.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(filterFrequency, startTime);
+    filter.Q.setValueAtTime(filterQ, startTime);
+
+    osc.type = oscType;
+    osc.frequency.setValueAtTime(freqSteps[0].value, startTime);
+    freqSteps.slice(1).forEach((step) => {
+        const time = startTime + step.at;
+        const ramp = step.ramp === 'exponential' ? 'exponentialRampToValueAtTime' : 'linearRampToValueAtTime';
+        osc.frequency[ramp](step.value, time);
+    });
+
+    gain.gain.setValueAtTime(gainSteps[0].value, startTime);
+    gainSteps.slice(1).forEach((step) => {
+        const time = startTime + step.at;
+        const ramp = step.ramp === 'exponential' ? 'exponentialRampToValueAtTime' : 'linearRampToValueAtTime';
+        gain.gain[ramp](step.value, time);
+    });
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(context.destination);
+
+    osc.start(startTime);
+    osc.stop(startTime + duration);
+}
+
+/**
+ * Play a single synthetic IAAI vocalization.
+ */
+function playSynthIAAIOnce() {
+    if (!audioContext) return;
+    const startTime = audioContext.currentTime;
+    IAAI_SEGMENTS.forEach((segment) => {
+        scheduleIAAISegment(
+            audioContext,
+            startTime + segment.offset,
+            segment.oscType,
+            segment.filterFrequency,
+            segment.filterQ,
+            segment.freqSteps,
+            segment.gainSteps,
+            segment.duration
+        );
+    });
+}
+
+/**
+ * Start looping the synth IAAI sound.
+ */
+function startSynthLoop() {
+    initAudioContext();
+    if (isPlaying) return;
+    isPlaying = true;
+    playSynthIAAIOnce();
+    soundInterval = setInterval(() => {
+        if (isPlaying && audioContext) {
+            playSynthIAAIOnce();
+        }
+    }, 600);
+}
+
+/**
+ * Stop the synth loop.
+ */
+function stopSynthLoop() {
     isPlaying = false;
     if (soundInterval) {
         clearInterval(soundInterval);
         soundInterval = null;
     }
+}
+
+/**
+ * Play IAAI sound using media file when available.
+ */
+function playIAAISound() {
+    const audioElement = getIAAIAudioElement();
+    if (audioElement && audioElement.getAttribute('src')) {
+        playMediaIAAISound(audioElement);
+        return;
+    }
+    startSynthLoop();
+}
+
+/**
+ * Stop IAAI sound.
+ */
+function stopIAAISound() {
+    const audioElement = getIAAIAudioElement();
+    if (audioElement && audioElement.getAttribute('src')) {
+        stopMediaIAAISound(audioElement);
+        return;
+    }
+    stopSynthLoop();
 }
 
 // Export for use in main script
