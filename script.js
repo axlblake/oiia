@@ -31,6 +31,68 @@ let totalPlayTimeMs = 0;
 let playSessionStartMs = 0;
 let strategyDelayMs = 1200;
 
+/**
+ * @returns {HTMLDivElement | null}
+ */
+function getStrategyTextElement() {
+    const element = document.getElementById('strategy-text');
+    return element instanceof HTMLDivElement ? element : null;
+}
+
+/**
+ * @param {HTMLElement} element
+ * @returns {number}
+ */
+function getMaxFontSizePx(element) {
+    const stored = element.dataset.maxFontSize;
+    if (stored) {
+        return Number(stored);
+    }
+    const computed = window.getComputedStyle(element);
+    const size = Number.parseFloat(computed.fontSize);
+    element.dataset.maxFontSize = String(size);
+    return size;
+}
+
+/**
+ * @param {HTMLElement} element
+ * @param {number} minPx
+ */
+function fitTextToSingleLine(element, minPx) {
+    const maxPx = getMaxFontSizePx(element);
+    if (!element.clientWidth) {
+        return;
+    }
+    let low = Math.max(1, Math.floor(minPx));
+    let high = Math.max(low, Math.floor(maxPx));
+    let best = low;
+    while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        element.style.fontSize = `${mid}px`;
+        if (element.scrollWidth <= element.clientWidth) {
+            best = mid;
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+    element.style.fontSize = `${best}px`;
+}
+
+/**
+ * Fit strategy and press text to one row.
+ */
+function fitAllTextToSingleLine() {
+    const strategyText = getStrategyTextElement();
+    if (strategyText) {
+        fitTextToSingleLine(strategyText, 10);
+    }
+    const pressText = getPressTextElement();
+    if (pressText) {
+        fitTextToSingleLine(pressText, 10);
+    }
+}
+
 function isPercentStrategyText(text) {
     return /\+\s*\d+%/.test(text);
 }
@@ -195,6 +257,7 @@ function init() {
 
     // Hide loading
     document.getElementById('loading').style.display = 'none';
+    fitAllTextToSingleLine();
 
     // Start animation loop
     animate();
@@ -787,7 +850,10 @@ function stopIAAI() {
 
 // Show next strategy text (cycles continuously)
 function showNextStrategy() {
-    const strategyText = document.getElementById('strategy-text');
+    const strategyText = getStrategyTextElement();
+    if (!strategyText) {
+        return;
+    }
     if (strategyHideTimeoutId !== null) {
         clearTimeout(strategyHideTimeoutId);
         strategyHideTimeoutId = null;
@@ -813,6 +879,9 @@ function showNextStrategy() {
         lastStrategyText = textToShow; // Track the last shown percent text
     }
     strategyText.classList.add('show');
+    requestAnimationFrame(() => {
+        fitTextToSingleLine(strategyText, 10);
+    });
 
     currentStrategyIndex++;
     lastStrategyTime = Date.now();
@@ -1040,7 +1109,7 @@ function animate() {
         if (isSpinning && currentTime - startTime > 10000 && !completedSequence) {
 
             // Keep the last strategy text visible permanently above the button
-            const strategyText = document.getElementById('strategy-text');
+            const strategyText = getStrategyTextElement();
             if (lastStrategyText) {
                 const percentMatch = lastStrategyText.match(/\+\s*\d+%/);
                 if (percentMatch) {
@@ -1049,12 +1118,21 @@ function animate() {
                         percentText,
                         `<span class="percent-boost">${percentText}</span>`
                     );
-                    strategyText.innerHTML = htmlText;
+                    if (strategyText) {
+                        strategyText.innerHTML = htmlText;
+                    }
                 } else {
-                    strategyText.textContent = lastStrategyText;
+                    if (strategyText) {
+                        strategyText.textContent = lastStrategyText;
+                    }
                 }
-                strategyText.classList.add('show');
-                strategyText.style.color = getStrategyTextColor(lastStrategyText);
+                if (strategyText) {
+                    strategyText.classList.add('show');
+                    strategyText.style.color = getStrategyTextColor(lastStrategyText);
+                    requestAnimationFrame(() => {
+                        fitTextToSingleLine(strategyText, 10);
+                    });
+                }
             }
 
             // Show the button
@@ -1088,6 +1166,7 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    fitAllTextToSingleLine();
 }
 
 // Create a simple IAAI sound using Web Audio API (fallback)
