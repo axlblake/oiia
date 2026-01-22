@@ -24,6 +24,8 @@ let hasStartedOnce = false;
 let totalPlayTimeMs = 0;
 let playSessionStartMs = 0;
 let strategyDelayMs = 1200;
+let assetsLoaded = false;
+let musicLoaded = false;
 
 /**
  * @param {number} min
@@ -300,6 +302,116 @@ const confettiColors = [
     0xffd700, 0xdc143c, 0x8a2be2, 0x00ff00
 ];
 
+/**
+ * Update loading progress display.
+ * @param {number} loaded
+ * @param {number} total
+ */
+function updateLoadingProgress(loaded, total) {
+    const loadingElement = document.getElementById('loading');
+    if (!loadingElement) {
+        return;
+    }
+    const percent = Math.round((loaded / total) * 100);
+    loadingElement.textContent = `Loading IAAI Cat... ${percent}%`;
+}
+
+/**
+ * Load audio file and wait for it to be fully loaded.
+ * @param {() => void} onProgress
+ * @param {() => void} onComplete
+ */
+function loadAudioAsset(onProgress, onComplete) {
+    const audioElement = getIAAIAudioElement();
+    if (!audioElement) {
+        if (onProgress) {
+            onProgress();
+        }
+        if (onComplete) {
+            onComplete();
+        }
+        return;
+    }
+
+    let progressCalled = false;
+    let completeCalled = false;
+
+    const callProgress = () => {
+        if (!progressCalled) {
+            progressCalled = true;
+            if (onProgress) {
+                onProgress();
+            }
+        }
+    };
+
+    const callComplete = () => {
+        if (!completeCalled) {
+            completeCalled = true;
+            musicLoaded = true;
+            if (onComplete) {
+                onComplete();
+            }
+        }
+    };
+
+    audioElement.addEventListener('canplaythrough', () => {
+        callProgress();
+        callComplete();
+    }, { once: true });
+
+    audioElement.addEventListener('error', () => {
+        console.warn('Audio file failed to load, continuing without it');
+        callProgress();
+        callComplete();
+    }, { once: true });
+
+    audioElement.load();
+
+    const checkLoaded = () => {
+        if (audioElement.readyState >= 4) {
+            callProgress();
+            callComplete();
+        } else {
+            setTimeout(checkLoaded, 100);
+        }
+    };
+    checkLoaded();
+}
+
+/**
+ * @returns {HTMLAudioElement | null}
+ */
+function getIAAIAudioElement() {
+    const element = document.getElementById('iaai-audio');
+    return element instanceof HTMLAudioElement ? element : null;
+}
+
+/**
+ * Preload all assets before initializing the scene.
+ */
+function preloadAllAssets() {
+    const totalAssets = 10;
+    let loadedAssets = 0;
+
+    const updateProgress = () => {
+        loadedAssets++;
+        updateLoadingProgress(loadedAssets, totalAssets);
+    };
+
+    const checkAllLoaded = () => {
+        if (loadedAssets >= totalAssets && musicLoaded) {
+            assetsLoaded = true;
+            document.getElementById('loading').style.display = 'none';
+            showPressText();
+            fitAllTextToSingleLine();
+        }
+    };
+
+    createCatAsset(updateProgress, checkAllLoaded);
+    loadAudioAsset(updateProgress, checkAllLoaded);
+}
+
 // Initialize Three.js scene
 function init() {
     // Scene setup
@@ -320,18 +432,17 @@ function init() {
     // Lighting
     setupLighting();
 
-    // Create cat
-    createCatAsset();
-
     // Create particle system
     createParticles();
 
     // Event listeners
     setupEventListeners();
 
-    // Hide loading
-    document.getElementById('loading').style.display = 'none';
-    fitAllTextToSingleLine();
+    // Preload all assets
+    preloadAllAssets();
+
+    // Hide press text initially until assets are loaded
+    hidePressText();
 
     // Start animation loop
     animate();
@@ -366,10 +477,24 @@ function setupLighting() {
 
 /**
  * Load default cat and spin frames.
+ * @param {() => void} onProgress
+ * @param {() => void} onComplete
  */
-function createCatAsset() {
+function createCatAsset(onProgress, onComplete) {
     const loader = new THREE.TextureLoader();
     const totalFrames = 8;
+    let loadedCount = 0;
+    const totalAssets = totalFrames + 1;
+
+    const checkComplete = () => {
+        loadedCount++;
+        if (onProgress) {
+            onProgress();
+        }
+        if (loadedCount === totalAssets && onComplete) {
+            onComplete();
+        }
+    };
 
     loader.load(
         'oiia-cat-standing.png',
@@ -378,11 +503,13 @@ function createCatAsset() {
             texture.magFilter = THREE.LinearFilter;
             defaultCatTexture = texture;
             createCatSprite(texture);
+            checkComplete();
         },
         undefined,
         () => {
             console.warn('Default cat image not found, using fallback');
             createCat();
+            checkComplete();
         }
     );
 
@@ -393,9 +520,12 @@ function createCatAsset() {
                 texture.minFilter = THREE.LinearFilter;
                 texture.magFilter = THREE.LinearFilter;
                 spinFrames[i - 1] = texture;
+                checkComplete();
             },
             undefined,
-            () => {}
+            () => {
+                checkComplete();
+            }
         );
     }
 }
@@ -740,7 +870,7 @@ function setupEventListeners() {
 
     // Mouse/Touch events - Click and hold to play
     canvas.addEventListener('mousedown', () => {
-        if (isActiveInputSource('touch')) {
+        if (isActiveInputSource('touch') || !assetsLoaded || !musicLoaded) {
             return;
         }
         setActiveInputSource('mouse');
@@ -748,7 +878,7 @@ function setupEventListeners() {
     });
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        if (isActiveInputSource('mouse')) {
+        if (isActiveInputSource('mouse') || !assetsLoaded || !musicLoaded) {
             return;
         }
         setActiveInputSource('touch');
@@ -788,7 +918,7 @@ function setupEventListeners() {
     });
 
     window.addEventListener('keydown', (event) => {
-        if (event.code !== 'Space' || event.repeat) {
+        if (event.code !== 'Space' || event.repeat || !assetsLoaded || !musicLoaded) {
             return;
         }
         event.preventDefault();
@@ -822,7 +952,9 @@ function setupEventListeners() {
 
 // Start IAAI sequence when clicked/pressed
 function startIAAI() {
-    if (isSpinning) return;
+    if (isSpinning || !assetsLoaded || !musicLoaded) {
+        return;
+    }
 
     isSpinning = true;
     startTime = Date.now();
