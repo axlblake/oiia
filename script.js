@@ -8,16 +8,10 @@ let currentFrameIndex = 0;
 let lastFrameTime = 0;
 let glowRings = [];
 let defaultCatTexture = null;
-let strategyTexts = [
-    "🐱 Scanning strategies... 🐱",
-    "📈 + 23% Strategy Found! 🚀",
-    "💰 + 67% Strategy Found! 💎",
-    "🔥 + 122% Strategy Found! ⚡",
-    "🎯 + 178% Strategy Found! 🌟",
-    "💎 + 256% Strategy Found! 💰",
-    "🚀 + 345% Strategy Found! 🎊",
-    "⚡ + 512% Strategy Found! 🎯"
-];
+const SCANNING_TEXT = "🐱 Scanning strategies... 🐱";
+const STRATEGY_PREFIXES = ["📈", "💰", "🔥", "🎯", "💎", "🚀", "⚡"];
+const STRATEGY_SUFFIXES = ["🚀", "💎", "⚡", "🌟", "💰", "🎊", "🎯"];
+let strategyTexts = [];
 let currentStrategyIndex = 0;
 let lastStrategyTime = 0;
 let lastStrategyText = "";
@@ -30,6 +24,61 @@ let hasStartedOnce = false;
 let totalPlayTimeMs = 0;
 let playSessionStartMs = 0;
 let strategyDelayMs = 1200;
+
+/**
+ * @param {number} min
+ * @param {number} max
+ * @returns {number}
+ */
+function getRandomInt(min, max) {
+    const minValue = Math.ceil(min);
+    const maxValue = Math.floor(max);
+    return Math.floor(Math.random() * (maxValue - minValue + 1)) + minValue;
+}
+
+/**
+ * @param {number} percent
+ * @param {number} index
+ * @returns {string}
+ */
+function formatStrategyText(percent, index) {
+    const prefix = STRATEGY_PREFIXES[index % STRATEGY_PREFIXES.length];
+    const suffix = STRATEGY_SUFFIXES[index % STRATEGY_SUFFIXES.length];
+    return `${prefix} + ${percent}% Strategy Found! ${suffix}`;
+}
+
+/**
+ * @param {number} start
+ * @param {number} end
+ * @returns {number[]}
+ */
+function generatePercentSequence(start, end) {
+    const values = [start];
+    let current = start;
+    while (current < end) {
+        const remaining = end - current;
+        const minStep = Math.max(3, Math.floor(remaining / 6));
+        const maxStep = Math.max(minStep, Math.floor(remaining / 3));
+        const step = getRandomInt(minStep, maxStep);
+        current = Math.min(end, current + step);
+        values.push(current);
+        if (values.length > 12 && current < end) {
+            current = end;
+            values[values.length - 1] = current;
+        }
+    }
+    return values;
+}
+
+/**
+ * @returns {string[]}
+ */
+function buildStrategyTexts() {
+    const targetPercent = getRandomInt(148, 223);
+    const values = generatePercentSequence(3, targetPercent);
+    const percentTexts = values.map((value, index) => formatStrategyText(value, index));
+    return [SCANNING_TEXT, ...percentTexts];
+}
 
 /**
  * @returns {HTMLDivElement | null}
@@ -754,6 +803,11 @@ function startIAAI() {
     startTime = Date.now();
     playSessionStartMs = startTime;
     completedSequence = false;
+    strategyTexts = buildStrategyTexts();
+    currentStrategyIndex = 0;
+    lastStrategyTime = 0;
+    lastStrategyText = "";
+    strategyDelayMs = getRandomStrategyDelayMs();
     hidePressText();
 
     if (!hasStartedOnce) {

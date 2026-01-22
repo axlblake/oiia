@@ -137,23 +137,19 @@ body {
 }
 
 @media (max-width: 768px) {
-    #container {
-        transform: translateY(-10%);
-    }
-
     #strategy-text {
         font-size: clamp(1.7rem, 6.4vw, 2.4rem);
-        bottom: 120px;
+        bottom: 180px;
     }
 
     #press-text {
         font-size: clamp(1.6rem, 5.6vw, 2rem);
-        top: 68%;
+        top: 58%;
     }
 
     #start-earn-btn {
         padding: 15px 30px;
         font-size: 1.2rem;
-        bottom: 30px;
+        bottom: 80px;
     }
 }
