@@ -166,7 +166,32 @@ function getStrategyTextAtIndex(index) {
 }
 
 function getRandomStrategyDelayMs() {
-    return 2000 + Math.floor(Math.random() * 3001);
+    return 900 + Math.floor(Math.random() * 701);
+}
+
+/**
+ * @param {HTMLElement} element
+ * @param {string} text
+ * @param {boolean} animatePercent
+ */
+function setStrategyTextContent(element, text, animatePercent) {
+    const percentMatch = text.match(/\+\s*\d+%/);
+    if (percentMatch) {
+        const percentText = percentMatch[0];
+        const htmlText = text.replace(
+            percentText,
+            `<span class="percent-boost">${percentText}</span>`
+        );
+        element.innerHTML = htmlText;
+    } else {
+        element.textContent = text;
+    }
+    element.style.color = getStrategyTextColor(text);
+    if (animatePercent) {
+        element.classList.remove('percent-anim');
+        void element.offsetWidth;
+        element.classList.add('percent-anim');
+    }
 }
 
 function setActiveInputSource(source) {
@@ -915,20 +940,9 @@ function showNextStrategy() {
 
     // Cycle through strategy texts continuously
     const textToShow = getStrategyTextAtIndex(currentStrategyIndex);
-    const percentMatch = textToShow.match(/\+\s*\d+%/);
-    if (percentMatch) {
-        const percentText = percentMatch[0];
-        const htmlText = textToShow.replace(
-            percentText,
-            `<span class="percent-boost">${percentText}</span>`
-        );
-        strategyText.innerHTML = htmlText;
-    } else {
-        strategyText.textContent = textToShow;
-    }
     const isPercentBoost = isPercentStrategyText(textToShow);
     const isScanning = isScanningStrategyText(textToShow);
-    strategyText.style.color = getStrategyTextColor(textToShow);
+    setStrategyTextContent(strategyText, textToShow, isPercentBoost);
     if (isPercentBoost) {
         lastStrategyText = textToShow; // Track the last shown percent text
     }
@@ -1164,29 +1178,12 @@ function animate() {
 
             // Keep the last strategy text visible permanently above the button
             const strategyText = getStrategyTextElement();
-            if (lastStrategyText) {
-                const percentMatch = lastStrategyText.match(/\+\s*\d+%/);
-                if (percentMatch) {
-                    const percentText = percentMatch[0];
-                    const htmlText = lastStrategyText.replace(
-                        percentText,
-                        `<span class="percent-boost">${percentText}</span>`
-                    );
-                    if (strategyText) {
-                        strategyText.innerHTML = htmlText;
-                    }
-                } else {
-                    if (strategyText) {
-                        strategyText.textContent = lastStrategyText;
-                    }
-                }
-                if (strategyText) {
-                    strategyText.classList.add('show');
-                    strategyText.style.color = getStrategyTextColor(lastStrategyText);
-                    requestAnimationFrame(() => {
-                        fitTextToSingleLine(strategyText, 10);
-                    });
-                }
+            if (lastStrategyText && strategyText) {
+                setStrategyTextContent(strategyText, lastStrategyText, false);
+                strategyText.classList.add('show');
+                requestAnimationFrame(() => {
+                    fitTextToSingleLine(strategyText, 10);
+                });
             }
 
             // Show the button

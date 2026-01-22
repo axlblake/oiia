@@ -109,6 +109,41 @@ body {
     color: #6bcf7f;
 }
 
+#strategy-text.percent-anim {
+    animation: percentGlow 0.7s ease;
+}
+
+#strategy-text.percent-anim .percent-boost {
+    animation: percentPulse 0.7s ease;
+}
+
+@keyframes percentGlow {
+    0% {
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+    }
+    60% {
+        text-shadow: 0 0 35px rgba(107, 207, 127, 0.9);
+    }
+    100% {
+        text-shadow: 0 0 30px rgba(107, 207, 127, 0.7);
+    }
+}
+
+@keyframes percentPulse {
+    0% {
+        color: #ffffff;
+        transform: scale(1);
+    }
+    60% {
+        color: #6bcf7f;
+        transform: scale(1.08);
+    }
+    100% {
+        color: #6bcf7f;
+        transform: scale(1);
+    }
+}
+
 #start-earn-btn {
     position: absolute;
     bottom: 50px;
