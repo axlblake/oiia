@@ -50,6 +50,9 @@ body {
     text-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
     text-align: center;
     white-space: nowrap;
+    max-width: 92vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
     opacity: 0;
     transform: translateY(20px);
     transition: all 0.5s ease;
@@ -67,6 +70,9 @@ body {
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
     text-align: center;
     white-space: nowrap;
+    max-width: 90vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
     opacity: 1;
     transition: all 0.4s ease;
     z-index: 9;
@@ -125,12 +131,12 @@ body {
     }
 
     #strategy-text {
-        font-size: 1.3rem;
+        font-size: clamp(0.85rem, 3.2vw, 1.2rem);
         bottom: 120px;
     }
 
     #press-text {
-        font-size: 1rem;
+        font-size: clamp(0.8rem, 2.8vw, 1rem);
         top: 68%;
     }
 
