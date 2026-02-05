@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://telegram.org"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        .hidden { display: none; }
+        #open-btn { 
+            padding: 10px 20px; 
+            background: #248bcf; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="content" class="hidden">
+        <p>Ви в Telegram!</p>
+        <button id="open-btn" onclick="openExternal()">Відкрити посилання</button>
+    </div>
+
+    <div id="error" class="hidden" style="color: red;">
+        Будь ласка, відкрийте цю сторінку всередині Telegram.
+    </div>
+
+    <script>
+        function checkEnvironment() {
+            const webApp = window.Telegram.WebApp;
+            
+            // Перевірка 1: Чи є дані від Mini App?
+            // Перевірка 2: Чи є специфічні проксі-об'єкти в браузері Telegram?
+            const isTelegram = (webApp.initData !== "") || 
+                               (window.TelegramWebviewProxy !== undefined) || 
+                               (window.TelegramWebview !== undefined) ||
+                               (/Telegram/i.test(navigator.userAgent));
+
+            if (isTelegram) {
+                document.getElementById('content').classList.remove('hidden');
+                webApp.ready();
+            } else {
+                document.getElementById('error').classList.remove('hidden');
+            }
+        }
+
+        function openExternal() {
+            // Використовуємо офіційний метод Telegram
+            window.Telegram.WebApp.openLink('https://example.com');
+        }
+
+        window.onload = checkEnvironment;
+    </script>
+</body>
