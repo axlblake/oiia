@@ -14,33 +14,16 @@
         <button class="btn" onclick="goToExternal()">Open in External Browser</button>
     </div>
     <script>
-        function checkApp() {
+        function goToExternal() {
             const isTelegram = 
                 window.TelegramWebviewProxy !== undefined || 
                 window.TelegramWebview !== undefined ||
                 (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.platform !== 'unknown');
 
             if (isTelegram) {
-                document.getElementById('tg-layout').style.display = 'block';
-                
-                if (window.Telegram && window.Telegram.WebApp) {
-                    window.Telegram.WebApp.ready();
-                }
-            } else {
-                window.location.replace("https://app.gt-protocol.io");
-            }
+               window.location.replace("https://app.gt-protocol.io");
         }
-
-        function goToExternal() {
-            const url = 'https://example.com';
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.openLink) {
-                window.Telegram.WebApp.openLink(url);
-            } else {
-                window.location.href = url;
-            }
-        }
-
-        window.onload = checkApp;
+        window.onload = goToExternal;
     </script>
 </body>
 </html>
