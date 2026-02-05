@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Load the official Telegram script -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <style>
+        /* Optional: Hide the UI until we know we are in Telegram */
+        #telegram-ui { display: none; }
+        .warning { color: red; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <div id="telegram-ui">
+        <h3>Telegram Detected</h3>
+        <button onclick="openLink();">Open Externally</button>
+    </div>
+
+    <div id="fallback-ui" class="warning" style="display: none;">
+        Please open this page inside Telegram.
+    </div>
+
+    <script>
+        // 1. Initialize the WebApp
+        const webApp = window.Telegram.WebApp;
+
+        function detectTelegram() {
+            // Check if initData is present (indicates a real Telegram session)
+            if (webApp.initData !== "") {
+                document.getElementById('telegram-ui').style.display = 'block';
+                
+                // Tell Telegram the app is ready to be shown
+                webApp.ready(); 
+                
+                // Optional: Expand to full height
+                webApp.expand();
+            } else {
+                // Not in Telegram Webview
+                document.getElementById('fallback-ui').style.display = 'block';
+            }
+        }
+
+        function openLink() {
+            // Use the SDK method to open the link
+            webApp.openLink('https://example.com');
+        }
+
+        // Run the detection on load
+        window.onload = detectTelegram;
+    </script>
+</body>
+</html>
